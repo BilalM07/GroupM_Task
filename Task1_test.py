@@ -32,7 +32,6 @@ def test_clean_albums_df_removes_unneeded_columns():
         'artist_11': [None]
     })
     cleaned_df = clean_albums_df(sample_df.copy())
-    print (cleaned_df.columns)
     assert 'track_name' in cleaned_df.columns  
     assert 'release_date' in cleaned_df.columns
     assert 'label' in cleaned_df.columns
