@@ -1,0 +1,67 @@
+Here's a detailed explanation for Task 2 GCP Architecture Workflow, using the diagram as reference:
+
+1. Cloud Scheduler
+- What it does: Initiates the pipeline daily (e.g., at midnight).
+- Why it's used: Automates the trigger of data ingestion without manual effort.
+
+2. Cloud Function
+- Triggered by: Cloud Scheduler.
+- Performs two main tasks:
+  1. Reads Kaggle API credentials securely from Secret Manager 
+     and then fetches data from Kaggle using the API 
+	 and stores raw `.csv` files in Cloud Storage.
+  3. Then triggers Cloud Composer to initiate the ETL workflow.
+
+3. Secret Manager
+- What it does: Securely stores Kaggle API credentials.
+- Why it's used: Prevents hardcoding sensitive info in the code and enables role-based access.
+
+4. Cloud Storage
+- Purpose: Holds raw CSV files from Kaggle.
+- Why it's used:
+  - Durable and cost-effective storage.
+  - Easy integration with GCP services like Dataflow and Cloud Composer.
+
+5. Cloud Composer (Airflow DAG)
+- Triggered by: Cloud Function after data fetch is complete.
+- DAG Workflow Includes:
+  1. Reads raw CSVs from Cloud Storage.
+  2. Cleans & transforms the data (applies business rules like `radio_mix`, `popularity > 50`, `explicit == False`).
+  3. Loads final dataset into BigQuery.
+
+6. BigQuery
+- Receives: Transformed data from Airflow DAG.
+- Purpose:
+  1. Acts as a data warehouse.
+  2. Enables creation of views for business-specific aggregations or summaries.
+  3. Fast SQL-based analytics.
+
+7. Looker Studio
+- Connects to: BigQuery views.
+- Delivers: Visual dashboards (e.g., Top Labels, Popular Tracks).
+- Why it's used: Easy drag-and-drop UI, integrates natively with BigQuery for real-time BI.
+
+8. Monitoring & Alerting
+- Monitors:
+  - Cloud Scheduler
+  - Cloud Function
+  - Composer DAG
+  - BigQuery load status
+- Alerts:
+  - Send notifications (email/Slack) on failures or latency breaches.
+
+
+
+ Benefits of Using Specific GCP Components
+
+  Component          | Reason & Benefits                                                                 
+ ------------------- | ------------------------------------------------------------------------------------- 
+ Cloud Scheduler     | Cron-like automation, serverless, low-maintenance.                                    
+ Cloud Function      | Lightweight, scalable function to handle API calls and downstream triggers.           
+ Secret Manager      | Keeps credentials secure, audit-logged, and accessible only to authorized identities. 
+ Cloud Storage       | Durable, scalable, integrates with Dataflow, Composer, BigQuery easily.               
+ Cloud Composer      | Managed Airflow service, allows complex ETL orchestration with retries & visibility.  
+ BigQuery            | Serverless, highly-performant SQL data warehouse with automatic scaling.              
+ Looker Studio       | Interactive dashboarding, directly on BigQuery without exporting data.                
+ Monitoring & Alerts | Ensures SLA, catches failures early, keeps system reliable.                           
+
